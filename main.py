@@ -1,11 +1,13 @@
 import json
-import os
-import uuid
+from os import path
+from uuid import uuid4
+from datetime import datetime
 
 data_file = "data.json"
 
+
 def load_users():
-    if not os.path.exists(data_file):
+    if not path.exists(data_file):
         return []
     try:
         with open(data_file, "r") as f:
@@ -18,8 +20,18 @@ def save_users(users):
         json.dump(users, f, indent=4)
 
 def initialize_file():
-    if not os.path.exists(data_file):
+    if not path.exists(data_file):
         save_users([])
+
+def log_event(event, LANID):
+
+    if not path.exists("logs.txt"):
+        with open("logs.txt", "a") as f:
+            f.write(f"Log file initialized Time: {datetime.now()}\n")
+
+    if path.exists("logs.txt"):
+            with open("logs.txt", "a") as f:
+                f.write(f"{LANID} WAS {event} {datetime.now()}\n")
 
 def create_user():
     print("\n --- User Creation --- ")
@@ -47,6 +59,7 @@ def create_user():
         LANID = f"{base_lan_id}{l_counter}"
         l_counter += 1
         
+
     #Email generation
     base_email_local = f"{f_name}.{l_name}"
     domain = "@idm.internal"
@@ -58,7 +71,7 @@ def create_user():
         email = f"{base_email_local}{e_counter}{domain}".lower()
         e_counter += 1
         
-    user_id = str(uuid.uuid4())
+    user_id = str(uuid4())
     
     
     #grouping all new user information
@@ -69,19 +82,20 @@ def create_user():
         "Email": email,
         "LANID": LANID,
         "user_id": user_id,
-        "Account Status": "enabled"
+        "Account Status": "disabled"
     }
     
     users.append(new_user)
     save_users(users)
-    
+    log_event("CREATED", LANID)
+
     m_initial = m_name[0] if m_name else ""
     
     print(f"\nSuccessfully created account for {l_name}, {f_name} {m_initial}")
     print(f"Email: {email}")
     print(f"LANID: {LANID}")
     print(f"User ID: {user_id}")
-    print("Account Status: enabled")
+    print("Account Status: disabled")
 
 def list_users():
     print(" --- Users --- ")
@@ -94,6 +108,7 @@ def list_users():
         print(f"{i}. {user['Last Name']}, {user['First Name']} | LANID: {user['LANID']} | Email: {user['Email']} | User ID: {user['user_id']} | Account Status: {user['Account Status']}")
 
 def disable_user():
+
     print(" --- Disable User --- ")
     
     users = load_users()
@@ -108,12 +123,39 @@ def disable_user():
             if answer == "Y":
                 user['Account Status'] = "disabled"
                 save_users(users)
+                log_event("DISABLED", user['LANID'])
                 print(f"Disabled {user['LANID']}")
             else:
                 print("Aborted")
                 break
     if found != True:
-        print("User not found")
+        print(f"{lan_id_input} User not found")
+
+def enable_user():
+
+    print(" --- Enable User ---")
+
+    users = load_users()
+    found = False
+    lan_id_input = input("Please enter the LAN ID of the user you wish to enable:").strip().upper()
+    for user in users:
+        if user['LANID'].upper() == lan_id_input:
+            found = True
+            print(f"{user['First Name']}, {user['Last Name']}")
+            print(f"{user['Email']}")
+            answer = input("Y/N: ").strip().upper()
+            if answer == "Y":
+                user['Account Status'] = "enabled"
+                save_users(users)
+                log_event("ENABLED", user['LANID'])
+                print(f"Enabled, {user['LANID']}")
+            else:
+                print("Aborted")
+                break
+    if found != True:
+        print(f"{lan_id_input} User not found")
+
+
 def menu():
     initialize_file()
     
