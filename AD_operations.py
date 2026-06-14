@@ -1,15 +1,15 @@
 from ldap3 import Server, Connection
-from secrets_local import SVC_PW
+import secrets_local
 
 def initialize_connection():
 
 
-    server = Server("ldap://REDACTED_IP")
+    server = Server(f"ldap://{secrets_local.DC_host_ip}")
 
     conn = Connection(
         server,
-        user="REDACTED_ACCOUNT",
-        password=SVC_PW,
+        user=secrets_local.SVC_Account_AD,
+        password=secrets_local.SVC_PW,
         auto_bind=True,   
     )
 
@@ -21,7 +21,7 @@ def search_user_AD(conn, sAMAccountName_search):
      
      
      conn.search(
-                'REDACTED_BASE_DN', 
+                secrets_local.SEARCH_BASE, 
                     f'(&(ObjectClass=user)(objectCategory=Person)(sAMAccountName={sAMAccountName_search}))', 
                     attributes=['sAMAccountName', 'mail'],
     )
