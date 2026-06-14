@@ -3,7 +3,7 @@ from os import path
 from uuid import uuid4
 from datetime import datetime
 import AD_operations
-
+import secrets_local
 data_file = "data.json"
 conn = AD_operations.initialize_connection()
 def load_users():
@@ -70,12 +70,12 @@ def create_user():
 
     #Email generation
     base_email_local = f"{f_name}.{l_name}"
-    domain = "@example.internal"
+    domain = secrets_local.domain
     email = f"{base_email_local}{domain}".lower()
     e_counter = 1
     
     while email in existing_emails:
-        #if John.doe@example.internal exists then it will use john.doe1@example.internal, avoiding collision
+        #if John.doe@example.internal exists then it will use john.doe1@example.com, avoiding collision
         email = f"{base_email_local}{e_counter}{domain}".lower()
         e_counter += 1
         
