@@ -2,10 +2,10 @@ import json
 from os import path
 from uuid import uuid4
 from datetime import datetime
+import AD_operations
 
 data_file = "data.json"
-
-
+conn = AD_operations.initialize_connection()
 def load_users():
     if not path.exists(data_file):
         return []
@@ -32,6 +32,14 @@ def log_event(event, LANID):
     if path.exists("logs.txt"):
             with open("logs.txt", "a") as f:
                 f.write(f"{LANID} WAS {event} {datetime.now()}\n")
+def search_user():
+    user_search = input("Please enter the sAMAccountName of the user you wish to search: \n")
+    results = AD_operations.search_user_AD(conn, user_search)
+    if results:
+        print(results[0])
+    else:
+        print("No user found")
+    
 
 def create_user():
     print("\n --- User Creation --- ")
@@ -161,10 +169,12 @@ def menu():
     
     while True:
         print("\n --- Menu --- ")
-        print("1. Create User")
-        print("2. List Users")
+        print("1. Create user")
+        print("2. List users")
         print("3. Disable user")
-        print("4. Exit")
+        print("4. Enable user")
+        print("5. Search User")
+        print("6. Exit")
         
         try:
             user_choice = int(input("Input choice here: "))
@@ -179,6 +189,10 @@ def menu():
         elif user_choice == 3:
             disable_user()
         elif user_choice == 4:
+            enable_user()
+        elif user_choice == 5:
+            search_user()
+        elif user_choice == 6:
             print("Goodbye")
             break
         else:
