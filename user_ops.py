@@ -1,0 +1,144 @@
+from uuid import uuid4
+import AD_operations
+import secrets_local
+import storage
+
+conn = AD_operations.initialize_connection()
+
+
+def search_user():
+    user_search = input("Please enter the sAMAccountName of the user you wish to search: ")
+    results = AD_operations.search_user_AD(conn, user_search)
+    if results:
+        print(results[0])
+    else:
+        print("No user found")
+    
+
+def create_user():
+    print("\n --- User Creation --- ")
+    
+    users = storage.load_users()
+    
+    #User information gathering
+    f_name = input("Enter First Name: ").strip()
+    m_name = input("Enter Middle Name: ").strip()
+    l_name = input("Enter Last Name: ").strip()
+    
+    if not f_name or not l_name:
+        print("Error first and last name required")
+        return
+        
+    #Gathering existing Emails & LANID
+    exiting_lan_ids = [user['LANID'].upper() for user in users]
+    existing_emails = [user['Email'].lower() for user in users]
+    
+    #LANID generation
+    base_lan_id = (f"{f_name[:4]}{m_name[:1]}{l_name[:2]}").upper()
+    LANID = base_lan_id
+    l_counter = 1
+    while LANID in exiting_lan_ids:
+        LANID = f"{base_lan_id}{l_counter}"
+        l_counter += 1
+        
+
+    #Email generation
+    base_email_local = f"{f_name}.{l_name}"
+    domain = secrets_local.domain
+    email = f"{base_email_local}@{domain}".lower()
+    e_counter = 1
+    
+    while email in existing_emails:
+        #if John.doe@example.internal exists then it will use john.doe1@example.com, avoiding collision
+        email = f"{base_email_local}{e_counter}@{domain}".lower()
+        e_counter += 1
+        
+    user_id = str(uuid4())
+    
+    
+    #grouping all new user information
+    new_user = {
+        "Last Name": l_name,
+        "First Name": f_name,
+        "Middle Name": m_name,
+        "Email": email,
+        "LANID": LANID,
+        "user_id": user_id,
+        "Account Status": "disabled"
+    }
+    
+    users.append(new_user)
+    storage.save_users(users)
+    storage.log_event("CREATED", LANID)
+
+    m_initial = m_name[0] if m_name else ""
+    
+    print(f"\nSuccessfully created account for {l_name}, {f_name} {m_initial}")
+    print(f"Email: {email}")
+    print(f"LANID: {LANID}")
+    print(f"User ID: {user_id}")
+    print("Account Status: disabled")
+
+def list_users():
+    print(" --- Users --- ")
+    users = storage.load_users()
+    if not users:
+        print("No users found.")
+        return
+        
+    for i, user in enumerate(users, 1):
+        print(f"{i}. {user['Last Name']}, {user['First Name']} | LANID: {user['LANID']} | Email: {user['Email']} | User ID: {user['user_id']} | Account Status: {user['Account Status']}")
+
+def disable_user():
+
+    print(" --- Disable User --- ")
+    
+    users = storage.load_users()
+    found = False
+    lan_id_input = input("Please enter the LAN ID of the user you wish to disable: ").strip().upper()
+    for user in users:
+        if user['LANID'].upper() == lan_id_input:
+            found = True
+            print(f"{user['First Name']}, {user['Last Name']}")
+            print(f"{user['Email']}")
+            answer = input("Y/N: ").strip().upper()
+            if answer == "Y":
+                if user['Account Status'] == "disabled":
+                    print("Account is already disabled")
+                    break
+                user['Account Status'] = "disabled"
+                storage.save_users(users)
+                storage.log_event("DISABLED", user['LANID'])
+                print(f"Disabled {user['LANID']}")
+            else:
+                print("Aborted")
+                break
+    if found != True:
+        print(f"{lan_id_input} User not found")
+
+def enable_user():
+
+    print(" --- Enable User ---")
+
+    users = storage.load_users()
+    found = False
+    lan_id_input = input("Please enter the LAN ID of the user you wish to enable:").strip().upper()
+    for user in users:
+        if user['LANID'].upper() == lan_id_input:
+            found = True
+            print(f"{user['First Name']}, {user['Last Name']}")
+            print(f"{user['Email']}")
+            answer = input("Y/N: ").strip().upper()
+            if answer == "Y":
+                if user['Account Status'] == "enabled":
+                    print("User is already enabled")
+                    break
+                user['Account Status'] = "enabled"
+                storage.save_users(users)
+                storage.log_event("ENABLED", user['LANID'])
+                print(f"Enabled {user['LANID']}")
+            else:
+                print("Aborted")
+                break
+    if found != True:
+        print(f"{lan_id_input} User not found")

@@ -1,4 +1,5 @@
 from ldap3 import Server, Connection
+from ldap3.utils.conv import escape_filter_chars
 import secrets_local
 
 def initialize_connection():
@@ -13,17 +14,15 @@ def initialize_connection():
         auto_bind=True,   
     )
 
-    print("Bound?", conn.bound)
-
     return conn
 
 def search_user_AD(conn, sAMAccountName_search):
      
-     
+     safe_name = escape_filter_chars(sAMAccountName_search)
      conn.search(
                 secrets_local.SEARCH_BASE, 
-                    f'(&(ObjectClass=user)(objectCategory=Person)(sAMAccountName={sAMAccountName_search}))', 
-                    attributes=['sAMAccountName', 'mail'],
+                    f'(&(ObjectClass=user)(objectCategory=Person)(sAMAccountName={safe_name}))', 
+                    attributes=['sAMAccountName', 'mail', 'userAccountControl'],
     )
+
      return conn.entries
-    
