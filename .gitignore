@@ -2,9 +2,8 @@ data.json
 logs.txt
 secrets_local.py
 __pycache__/
-NOTES.md
 replacements.txt
-notes_2026-06-14.md
 test_iam.py
 screenshots/
-notes_2026-06-15.md
+.pytest_cache/
+personal_notes/
