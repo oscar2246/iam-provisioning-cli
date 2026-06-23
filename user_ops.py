@@ -22,48 +22,48 @@ def gather_information():
     m_name = input("Enter Middle Name: ").strip()
     l_name = input("Enter Last Name: ").strip()
 
-    users = storage.load_users()
-    existing_lan_ids = [user['LANID'].upper() for user in users]
-    existing_emails = [user['Email'].lower() for user in users]
+
 
     if not f_name or not l_name:
         print("First and Last Name are required")
         return
     
-    information = (f_name, m_name, l_name, existing_lan_ids, existing_emails)
+    information = (f_name, m_name, l_name)
 
     return information
     
 class user_creation:
     
-    def __init__(self, f_name, m_name, l_name, existing_lan_ids, existing_emails):
+    def __init__(self, f_name, m_name, l_name, conn):
             self.f_name = f_name
             self.m_name = m_name
             self.l_name = l_name
             self.user_id = str(uuid4())
             self.account_status = "disabled"
-            self.set_lan(existing_lan_ids)
-            self.set_email(existing_emails)
+            self.set_lan(conn)
+            self.set_email(conn)
 
-    def set_lan(self, existing_lan_ids):
+    def set_lan(self,  conn):
         
         #LANID generation
         base_lan_id = (f"{self.f_name[:4]}{self.m_name[:1]}{self.l_name[:2]}").upper()
         LANID = base_lan_id
         l_counter = 1
-        while LANID in existing_lan_ids:
+        
+        while AD_operations.check_lan_existence(conn, LANID):
             LANID = f"{base_lan_id}{l_counter}"
             l_counter += 1
+
         self.LANID = LANID
     
-    def set_email(self, existing_emails):
+    def set_email(self, conn):
         #Email generation
         base_email_local = f"{self.f_name}.{self.l_name}"
         domain = secrets_local.domain
         email = f"{base_email_local}@{domain}".lower()
         e_counter = 1
     
-        while email in existing_emails:
+        while AD_operations.check_email_existence(conn, email):
             #if John.doe@example.internal exists then it will use john.doe1@example.com, avoiding collision
             email = f"{base_email_local}{e_counter}@{domain}".lower()
             e_counter += 1
@@ -81,10 +81,8 @@ def create_user():
     f_name = information[0]
     m_name = information[1]
     l_name = information[2]
-    existing_lan_ids = information[3]
-    existing_emails = information[4]
 
-    new_user_obj = user_creation(f_name, m_name, l_name, existing_lan_ids, existing_emails)
+    new_user_obj = user_creation(f_name, m_name, l_name, conn)
     
     #grouping all new user information
     new_user = {

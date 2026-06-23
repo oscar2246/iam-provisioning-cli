@@ -26,3 +26,23 @@ def search_user_AD(conn, sAMAccountName_search):
     )
 
      return conn.entries
+
+def check_email_existence(conn, Email):
+     
+     safe_name_email = escape_filter_chars(Email)
+
+     conn.search(
+          secrets_local.SEARCH_BASE,
+          f'(&(ObjectClass=user)(ObjectCategory=Person)(mail={safe_name_email}))'
+     )
+     return bool(conn.entries)
+
+def check_lan_existence(conn, lan):
+     
+     safe_name_lan = escape_filter_chars(lan)
+
+     conn.search(
+          secrets_local.SEARCH_BASE,
+          f'(&(ObjectClass=user)(ObjectCategory=Person)(sAMAccountName={safe_name_lan}))'
+     )
+     return bool(conn.entries)
