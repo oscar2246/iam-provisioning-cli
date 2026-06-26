@@ -134,10 +134,13 @@ def disable_user():
                 if user['Account Status'] == "disabled":
                     print("Account is already disabled")
                     break
-                user['Account Status'] = "disabled"
-                storage.save_users(users)
-                storage.log_event("DISABLED", user['LANID'])
-                print(f"Disabled {user['LANID']}")
+                if AD_operations.modify_account_status(conn, user['LANID'], False):
+                    user['Account Status'] = "disabled"
+                    storage.save_users(users)
+                    storage.log_event("DISABLED", user['LANID'])
+                    print(f"Disabled {user['LANID']}")
+                else:
+                    print("User Disable operation failed")
             else:
                 print("Aborted")
                 break
@@ -161,10 +164,13 @@ def enable_user():
                 if user['Account Status'] == "enabled":
                     print("User is already enabled")
                     break
-                user['Account Status'] = "enabled"
-                storage.save_users(users)
-                storage.log_event("ENABLED", user['LANID'])
-                print(f"Enabled {user['LANID']}")
+                if AD_operations.modify_account_status(conn, user['LANID'], True):
+                    user['Account Status'] = "enabled"
+                    storage.save_users(users)
+                    storage.log_event("ENABLED", user['LANID'])
+                    print(f"Enabled {user['LANID']}")
+                else:
+                    print("User Enable operation failed")
             else:
                 print("Aborted")
                 break

@@ -1,6 +1,8 @@
-from ldap3 import Server, Connection
+from ldap3 import Server, Connection, MODIFY_REPLACE
 from ldap3.utils.conv import escape_filter_chars
 import secrets_local
+
+ACCOUNTDISABLE = 0x0002
 
 def initialize_connection():
 
@@ -46,3 +48,39 @@ def check_lan_existence(conn, lan):
           f'(&(ObjectClass=user)(ObjectCategory=Person)(sAMAccountName={safe_name_lan}))'
      )
      return bool(conn.entries)
+
+def get_user_AD(conn, lan):
+     safe_name_lan = escape_filter_chars(lan)
+
+     conn.search(
+          secrets_local.SEARCH_BASE,
+          f'(&(ObjectClass=user)(ObjectCategory=Person)(sAMAccountName={safe_name_lan}))',
+          attributes=['userAccountControl']
+     )
+     if conn.entries:
+          uac_number = int(conn.entries[0].userAccountControl.value)
+          user_dn = conn.entries[0].entry_dn
+          return user_dn, uac_number
+     else:
+          return None, None
+     
+def modify_account_status(conn, lan, enable):
+     dn, uac = get_user_AD(conn, lan)
+     if dn:
+          if enable:
+               new_uac = uac & ~ACCOUNTDISABLE
+          else:
+               new_uac = uac | ACCOUNTDISABLE
+          conn.modify(dn, {'userAccountControl': [(MODIFY_REPLACE,[new_uac])]})
+          return conn.result['result'] == 0
+     else:
+          return False
+     
+
+
+          
+               
+          
+
+
+     
